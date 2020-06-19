@@ -1,9 +1,9 @@
-import fs from 'fs';
-import yaml from 'js-yaml';
-import { app } from './express';
+const fs = require('fs');
+const yaml = require('js-yaml');
+const { conf } = require('./conf');
 
 function fileName({ method, path }) {
-  return `${process.cwd()}/logs/${Date.now()}-${method}-${path.substr(1).split(/\W/).map((l) => (l || '') && l[0].toUpperCase() + l.substr(1).toLowerCase()).join('')}-${new Date().toISOString().substring(0, 19)}`;
+  return `${process.cwd()}/${conf.options.logs}/${Date.now()}-${method}-${path.substr(1).split(/\W/).map((l) => (l || '') && l[0].toUpperCase() + l.substr(1).toLowerCase()).join('')}-${new Date().toISOString().substring(0, 19)}`;
 }
 
 function noop(err) {
@@ -12,8 +12,8 @@ function noop(err) {
   }
 }
 
-function log({
-  conf, request, originalRequest, response, originalResponse, logs
+module.exports = function log({
+  conf, request, originalRequest, response, originalResponse, logs,
 }, res, next) {
   if (!conf.log) {
     return next();
@@ -39,8 +39,4 @@ function log({
 
   fs.writeFile(fileName(originalRequest || request), yaml.safeDump(file), noop);
   next();
-}
-
-export default function connect() {
-  app.use(log);
-}
+};

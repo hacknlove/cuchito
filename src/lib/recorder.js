@@ -1,7 +1,6 @@
-import fs from 'fs';
-import yaml from 'js-yaml';
-import { app } from './express';
-import { conf } from './conf';
+const fs = require('fs');
+const yaml = require('js-yaml');
+const { conf } = require('./conf');
 
 let firstRequest = 0;
 let lastRequest = 0;
@@ -17,7 +16,7 @@ function fileName({ method, path }) {
 
   lastRequest = Date.now();
 
-  return `${process.cwd()}/saved/${now - firstRequest}-${method}-${path.substr(1).split(/\W/).map((l) => (l || '') && l[0].toUpperCase() + l.substr(1).toLowerCase()).join('')}-${new Date().toISOString().substring(0, 19)}`;
+  return `${process.cwd()}/${conf.options.saved}/${now - firstRequest}-${method}-${path.substr(1).split(/\W/).map((l) => (l || '') && l[0].toUpperCase() + l.substr(1).toLowerCase()).join('')}-${new Date().toISOString().substring(0, 19)}`;
 }
 
 function noop(err) {
@@ -26,7 +25,7 @@ function noop(err) {
   }
 }
 
-function recorder({
+module.exports = function recorder({
   conf, request,
 }, res, next) {
   if (!conf.record) {
@@ -43,8 +42,4 @@ function recorder({
 
   fs.writeFile(fileName(request), yaml.safeDump(request), noop);
   next();
-}
-
-export default function connect() {
-  app.use(recorder);
-}
+};

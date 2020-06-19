@@ -1,7 +1,6 @@
-import { app } from './express';
-import { conf } from './conf';
+const { conf } = require('./conf');
 
-function match(req, res, next) {
+module.exports = function match(req, res, next) {
   const {
     endpoints,
     ip,
@@ -28,7 +27,7 @@ function match(req, res, next) {
   }
 
   const { host, ...headers } = req.headers;
-  delete headers['If-None-Match'];
+  delete headers['if-none-match'];
 
   req.request = {
     path: req.path,
@@ -42,8 +41,4 @@ function match(req, res, next) {
   req.logs = [];
 
   next();
-}
-
-export default function connect() {
-  app.use(match);
-}
+};

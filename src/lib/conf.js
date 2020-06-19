@@ -1,20 +1,54 @@
-import glob from 'glob';
-import { match, compile } from 'path-to-regexp';
-import chokidar from 'chokidar';
+const glob = require('glob');
+const { match, compile } = require('path-to-regexp');
+const chokidar = require('chokidar');
+const yargs = require('yargs');
 
-const configPath = `${process.cwd()}/cuchito.js`;
-const prefix = `${process.cwd()}/endpoints`;
-const regexp = new RegExp(`^${prefix}(/.*)/([A-Z]+|all)/(conf|mutate|test)\\.js$`);
-const paths = {};
+const options = yargs
+  .usage('Usage: -c <config> -e <endpoints> -s <saved> -l <logs>')
+  .option('c', {
+    alias: 'config',
+    describe: 'path to the config file',
+    type: 'string',
+    demandOption: false,
+    default: 'cuchito.js',
+  })
+  .option('e', {
+    alias: 'endpoints',
+    describe: 'path to the folder that contains the endpoints',
+    type: 'string',
+    demandOption: false,
+    default: 'endpoints',
+  })
+  .option('s', {
+    alias: 'saved',
+    describe: 'path where the sessions are saved',
+    type: 'string',
+    demandOption: false,
+    default: 'saved',
+  })
+  .option('l', {
+    alias: 'logs',
+    describe: 'path where the logs are saved',
+    type: 'string',
+    demandOption: false,
+    default: 'logs',
+  })
+  .argv;
 
 const defecto = {
+  options,
   host: null,
   ip: '0.0.0.0',
   port: 1989,
   maxTimeSpan: 1000,
 };
 
-export const conf = {
+const configPath = `${process.cwd()}/${options.config}`;
+const prefix = `${process.cwd()}/${options.endpoints}`;
+const regexp = new RegExp(`^${prefix}(/.*)/([A-Z]+|all)/(conf|mutate|test)\\.js$`);
+const paths = {};
+
+const conf = {
   ...defecto,
   ...require(configPath),
   endpoints: [],
@@ -69,17 +103,20 @@ function reconfig() {
   conf.endpoints = endpoints;
 }
 
-export default function connect(reconnect) {
+function config(reconnect) {
   const confWatcher = chokidar.watch(configPath, { ignoreInitial: true, awaitWriteFinish: true });
 
   confWatcher.on('change', () => {
     const old = conf.ip + conf.port;
     reconfig();
-    if (old !== conf.ip + conf.port) {
+    if (old !== conf.ip + conf.port && reconnect) {
       reconnect();
     }
   });
 }
+
+exports.config = config;
+exports.conf = conf;
 
 function main() {
   glob.sync(`${prefix}/**/{conf,mutate,test}.js`).filter((file) => regexp.test(file)).forEach(addFile);

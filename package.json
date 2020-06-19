@@ -8,7 +8,8 @@
     "test": "jest"
   },
   "bin": {
-    "cuchito": "src/index.js"
+    "cuchito": "src/index.js",
+    "cuchito-player": "src/player.js"
   },
   "repository": {
     "type": "git",
@@ -33,7 +34,8 @@
     "nodemon": "^2.0.4",
     "path-to-regexp": "^6.1.0",
     "querystring": "^0.2.0",
-    "rfdc": "^1.1.4"
+    "rfdc": "^1.1.4",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@babel/core": "^7.10.2",

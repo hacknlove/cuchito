@@ -1,7 +1,5 @@
-import { callEndpoint } from './proxy';
-import { app } from './express';
-
 const rfdc = require('rfdc')({ proto: true });
+const { callEndpoint } = require('./proxy');
 
 function time(request) {
   setTimeout(launch, request.conf.multiply.interval, request);
@@ -20,7 +18,7 @@ async function launch(request) {
   }
 }
 
-function multiply({ conf, request, originalRequest }, res, next) {
+module.exports = function multiply({ conf, request, originalRequest }, res, next) {
   if (!conf.multiply) {
     return next();
   }
@@ -39,8 +37,4 @@ function multiply({ conf, request, originalRequest }, res, next) {
   });
 
   next();
-}
-
-export default function connect() {
-  app.use(multiply);
-}
+};

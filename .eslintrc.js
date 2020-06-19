@@ -11,6 +11,8 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
+    'no-constant-condition': 0,
+    'no-param-reassign': 0,
     'no-shadow': 0,
     'prefer-destructuring': 0,
     'prefer-template': 0,

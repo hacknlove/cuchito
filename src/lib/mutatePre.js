@@ -1,8 +1,6 @@
-import { app } from './express';
-
 const rfdc = require('rfdc')({ proto: true });
 
-async function mutatePre(req, res, next) {
+module.exports = async function mutatePre(req, res, next) {
   const { host, ...headers } = req.headers;
   delete headers['If-None-Match'];
 
@@ -13,8 +11,4 @@ async function mutatePre(req, res, next) {
   }
 
   next();
-}
-
-export default function connect() {
-  app.use(mutatePre);
-}
+};

@@ -1,6 +1,5 @@
-import fetch from 'node-fetch';
-import querystring from 'querystring';
-import { app } from './express';
+const fetch = require('node-fetch');
+const querystring = require('querystring');
 
 const withoutBody = {
   GET: true,
@@ -30,7 +29,7 @@ function addBody({ body, headers, method }) {
   return body + '';
 }
 
-export async function callEndpoint({
+async function callEndpoint({
   request: {
     method, headers, body, path, query,
   }, conf: { host },
@@ -78,13 +77,10 @@ export async function callEndpoint({
   return response;
 }
 
-async function proxy(req, res, next) {
+exports.proxy = async function proxy(req, res, next) {
   if (!req.response) {
     req.response = await callEndpoint(req);
   }
   next();
-}
-
-export default function connect() {
-  app.use(proxy);
-}
+};
+exports.callEndpoint = callEndpoint;

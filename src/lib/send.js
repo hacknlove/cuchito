@@ -1,6 +1,4 @@
-import { app } from './express';
-
-async function proxy(req, res, next) {
+module.exports = async function proxy(req, res, next) {
   res.status(req.response.status);
 
   for (const [key, value] of Object.entries(req.response.headers)) {
@@ -9,8 +7,4 @@ async function proxy(req, res, next) {
   res.send(req.response.body);
 
   next();
-}
-
-export default function connect() {
-  app.use(proxy);
-}
+};
