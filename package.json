@@ -9,7 +9,7 @@
   },
   "bin": {
     "cuchito": "src/index.js",
-    "cuchito-player": "src/player.js"
+    "cuchito-test": "src/player.js"
   },
   "repository": {
     "type": "git",
@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/hacknlove/cuchito#readme",
   "dependencies": {
+    "@hapi/joi": "^17.1.1",
     "body-parser": "^1.19.0",
     "chokidar": "^3.4.0",
     "compression": "^1.7.4",
@@ -35,6 +36,7 @@
     "path-to-regexp": "^6.1.0",
     "querystring": "^0.2.0",
     "rfdc": "^1.1.4",
+    "timeout-signal": "^1.0.0",
     "yargs": "^15.3.1"
   },
   "devDependencies": {
