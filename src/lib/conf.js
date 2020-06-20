@@ -41,6 +41,7 @@ const defecto = {
   ip: '0.0.0.0',
   port: 1989,
   maxTimeSpan: 1000,
+  timeout: 5000,
 };
 
 const configPath = `${process.cwd()}/${options.config}`;
@@ -103,24 +104,10 @@ function reconfig() {
   conf.endpoints = endpoints;
 }
 
-function config(reconnect) {
-  const confWatcher = chokidar.watch(configPath, { ignoreInitial: true, awaitWriteFinish: true });
+glob.sync(`${prefix}/**/{conf,mutate,test}.js`).filter((file) => regexp.test(file)).forEach(addFile);
+updateEndpoints();
 
-  confWatcher.on('change', () => {
-    const old = conf.ip + conf.port;
-    reconfig();
-    if (old !== conf.ip + conf.port && reconnect) {
-      reconnect();
-    }
-  });
-}
-
-exports.config = config;
-exports.conf = conf;
-
-function main() {
-  glob.sync(`${prefix}/**/{conf,mutate,test}.js`).filter((file) => regexp.test(file)).forEach(addFile);
-  updateEndpoints();
+function live(reconnect) {
   const endpointsWatched = chokidar.watch(`${prefix}/**/{conf,mutate,test}.js`, {
     ignoreInitial: true, awaitWriteFinish: true, usePolling: true, interval: 1000,
   });
@@ -150,6 +137,17 @@ function main() {
       updateEndpoints();
     }
   });
+
+  const confWatcher = chokidar.watch(configPath, { ignoreInitial: true, awaitWriteFinish: true });
+
+  confWatcher.on('change', () => {
+    const old = conf.ip + conf.port;
+    reconfig();
+    if (old !== conf.ip + conf.port && reconnect) {
+      reconnect();
+    }
+  });
 }
 
-main();
+exports.live = live;
+exports.conf = conf;

@@ -9,11 +9,12 @@ const { proxy } = require('./lib/proxy');
 const multiply = require('./lib/multiply');
 const mutatePost = require('./lib/mutatePost');
 const log = require('./lib/log');
-const { config, conf } = require('./lib/conf');
+const { conf } = require('./lib/conf');
+const {
+  beforeResponse, responseSchema, response, afterResponse,
+} = require('./lib/test');
 
 dotenv.config();
-
-config();
 
 const configPath = `${process.cwd()}/${conf.options.saved}/*`;
 const files = glob.sync(configPath)
@@ -21,23 +22,16 @@ const files = glob.sync(configPath)
   .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
 function execute(req) {
-  match(
-    req,
-    undefined,
-    () => mutatePre(req,
-      undefined,
-      () => proxy(req,
-        undefined,
-        () => multiply(req,
-          undefined,
-          () => mutatePost(
-            req,
-            undefined,
-            () => log(req,
-              undefined,
-              () => undefined),
-          )))),
-  );
+  match(req, undefined,
+    () => beforeResponse(req, undefined,
+      () => mutatePre(req, undefined,
+        () => proxy(req, undefined,
+          () => responseSchema(req, undefined,
+            () => response(req, undefined,
+              () => afterResponse(req, undefined,
+                () => multiply(req, undefined,
+                  () => mutatePost(req, undefined,
+                    () => log(req, undefined, () => undefined))))))))));
 }
 
 function play(i, last) {
@@ -55,7 +49,6 @@ function play(i, last) {
       if (err) {
         return console.error(err);
       }
-      console.log(file);
       execute(yaml.safeLoad(data));
     });
   }, step - last);

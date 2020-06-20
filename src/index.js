@@ -9,12 +9,12 @@ const mutatePost = require('./lib/mutatePost');
 const send = require('./lib/send');
 const recorder = require('./lib/recorder');
 const log = require('./lib/log');
-const { config } = require('./lib/conf');
+const { live } = require('./lib/conf');
 
 dotenv.config();
 
 async function main() {
-  config(reconnect);
+  live(reconnect);
 
   app.use(match);
   app.use(recorder);

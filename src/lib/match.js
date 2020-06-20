@@ -18,7 +18,7 @@ module.exports = function match(req, res, next) {
 
     const matched = e.match(req.path);
     if (matched) {
-      req.conf = { ...globalConf, ...e.conf };
+      req.conf = { ...globalConf, ...e.conf, mutate: e.mutate, test: e.test };
       req.params = matched.params;
       return true;
     }
