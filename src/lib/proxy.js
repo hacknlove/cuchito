@@ -1,3 +1,4 @@
+const timeoutSignal = require('timeout-signal');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
 
@@ -32,7 +33,7 @@ function addBody({ body, headers, method }) {
 async function callEndpoint({
   request: {
     method, headers, body, path, query,
-  }, conf: { host },
+  }, conf: { host, timeout = 0 },
 }) {
   if (!host) {
     return {
@@ -43,6 +44,7 @@ async function callEndpoint({
       body: 'cuchito has not a host to proxy this request, nor a pre-mutator to generate one',
     };
   }
+
   const options = {
     method,
     headers,
@@ -59,7 +61,16 @@ async function callEndpoint({
     headers: {},
   };
 
-  const r = await fetch(url, options);
+  if (timeout) {
+    options.signal = timeoutSignal(timeout);
+  }
+  const r = await fetch(url, options).catch((error) => ({
+    status: 599,
+    headers: {
+      entries: () => [],
+    },
+    text: () => Promise.resolve(error.toString()),
+  }));
   response.status = r.status;
   for (const [key, value] of r.headers.entries()) {
     if (key === 'content-encoding') {
