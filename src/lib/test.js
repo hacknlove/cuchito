@@ -72,10 +72,9 @@ exports.responseSchema = function responseSchema(req, res, next) {
   console.log('here');
 
   const validation = req.conf.test.responseSchema.validate({
-    headers: req.request.headers,
-    body: req.request.body,
-    params: req.request.params,
-    query: req.request.query,
+    status: req.response.status,
+    headers: req.response.headers,
+    body: req.response.body,
   });
   if (validation.error) {
     if (req.conf.test.responseSchema.exitOnError) {
