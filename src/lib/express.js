@@ -8,9 +8,9 @@ const app = express();
 app.enable('trust proxy');
 app.use(require('compression')());
 
-app.use(bodyParser.json({ strict: false }));
-app.use(bodyParser.raw());
-app.use(bodyParser.text());
+app.use(bodyParser.json({ strict: false, limit: conf.maxBodySize }));
+app.use(bodyParser.raw({ limit: conf.maxBodySize }));
+app.use(bodyParser.text({ limit: conf.maxBodySize }));
 
 function connect() {
   const {

@@ -10,28 +10,28 @@ const options = yargs
     describe: 'path to the config file',
     type: 'string',
     demandOption: false,
-    default: 'cuchito.js',
+    default: process.env.CUCHITO_CONFIG || 'cuchito.js',
   })
   .option('e', {
     alias: 'endpoints',
     describe: 'path to the folder that contains the endpoints',
     type: 'string',
     demandOption: false,
-    default: 'endpoints',
+    default: process.env.CUCHITO_ENDPOINTS || 'endpoints',
   })
   .option('s', {
     alias: 'saved',
     describe: 'path where the sessions are saved',
     type: 'string',
     demandOption: false,
-    default: 'saved',
+    default: process.env.CUCHITO_SAVED || 'saved',
   })
   .option('l', {
     alias: 'logs',
     describe: 'path where the logs are saved',
     type: 'string',
     demandOption: false,
-    default: 'logs',
+    default: process.env.CUCHITO_LOGS || 'logs',
   })
   .argv;
 
@@ -42,11 +42,11 @@ const defecto = {
   port: 1989,
   maxTimeSpan: 1000,
   timeout: 5000,
+  maxBodySize: '50mb',
 };
 
 const configPath = `${process.cwd()}/${options.config}`;
-const prefix = `${process.cwd()}/${options.endpoints}`;
-const regexp = new RegExp(`^${prefix}(/.*)/([A-Z]+|all)/(conf|mutate|test)\\.js$`);
+
 const paths = {};
 
 const conf = {
@@ -54,7 +54,19 @@ const conf = {
   ...require(configPath),
   endpoints: [],
 };
+if (conf.onChange) {
+  conf.onChange(reconfig);
+}
+if (conf.paths) {
+  options.endpoints = conf.paths.endpoints || options.endpoints;
+  options.logs = conf.paths.endpoints || options.endpoints;
+  options.saved = conf.paths.endpoints || options.endpoints;
+}
 
+let prefix = `${process.cwd()}/${options.endpoints}`;
+let regexp = new RegExp(`^${prefix}(/.*)/([A-Z]+|all)/(conf|mutate|test)\\.js$`);
+let endpointsWatched;
+let reconnect;
 function addFile(path, update) {
   const parse = path.match(regexp);
   if (!parse) {
@@ -94,20 +106,35 @@ function updateEndpoints() {
   });
 }
 
-function reconfig() {
+function reconfig(config) {
   delete require.cache[configPath];
   const endpoints = conf.endpoints;
   for (const key of Object.keys(conf)) {
     delete conf[key];
   }
-  Object.assign(conf, defecto, require(configPath));
+  Object.assign(conf, defecto, config || require(configPath));
   conf.endpoints = endpoints;
+  if (conf.onChange) {
+    conf.onChange(reconfig);
+  }
+  if (conf.paths) {
+    options.endpoints = conf.paths.endpoints || options.endpoints;
+    options.logs = conf.paths.endpoints || options.endpoints;
+    options.saved = conf.paths.endpoints || options.endpoints;
+  }
+  if (`${process.cwd()}/${options.endpoints}` !== prefix) {
+    prefix = `${process.cwd()}/${options.endpoints}`;
+    regexp = new RegExp(`^${prefix}(/.*)/([A-Z]+|all)/(conf|mutate|test)\\.js$`);
+    endpointsWatched.close();
+    live();
+  }
 }
 
 glob.sync(`${prefix}/**/{conf,mutate,test}.js`).filter((file) => regexp.test(file)).forEach(addFile);
 updateEndpoints();
 
-function live(reconnect) {
+function live(r) {
+  reconnect = r;
   const endpointsWatched = chokidar.watch(`${prefix}/**/{conf,mutate,test}.js`, {
     ignoreInitial: true, awaitWriteFinish: true, usePolling: true, interval: 1000,
   });

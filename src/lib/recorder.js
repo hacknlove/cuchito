@@ -5,7 +5,7 @@ const { conf } = require('./conf');
 let firstRequest = 0;
 let lastRequest = 0;
 
-function fileName({ method, path }) {
+function fileName({ method, path, error }) {
   const now = Date.now();
   let stepSpan = now - lastRequest;
 
@@ -16,7 +16,7 @@ function fileName({ method, path }) {
 
   lastRequest = Date.now();
 
-  return `${process.cwd()}/${conf.options.saved}/${now - firstRequest}-${method}-${path.substr(1).split(/\W/).map((l) => (l || '') && l[0].toUpperCase() + l.substr(1).toLowerCase()).join('')}-${new Date().toISOString().substring(0, 19)}`;
+  return `${process.cwd()}/${conf.options.saved}/${now - firstRequest},${method},${path.substr(1).replace(/\//g, '⁄').replace(/&/g, '໕').replace(/"/g, '”')},${error ? 'error' : 'ok'}.yml`;
 }
 
 function noop(err) {

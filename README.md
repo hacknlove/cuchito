@@ -1,24 +1,28 @@
 # cuchito
-fantasic api testing tool
+**TitM *(test in the middle)* - made easy**
 
-## Feature index
+![cuchito-logo](assets/logo.svg)
 
-* **Guided stress test**
-  * Connect your front to cuchito and let it multiply your API calls thousands of time
-* **Automated stress test**
-  * Save your guided stress tests to create automated stress test that you can launch unatended.
-* **API testing**
-  * Add tests to check the responses of the requests made for the saved session
-* **API mocking**
-  * Replace or mutate request and responses, to test new features or edge cases on the front or the back.
-* **re-routing**
-  * Redirect some endpoints to other hosts and paths
-* **Real time config reload**
-  * Change any configuration global or endpoint specific on the fly.
+## WARNING
+This software is under intense development, this documentation it's not stable at all. Everithing could change.
+
+Do not use in production. Use it to try out the concept, to give feedback and to help with the development.
+
+## What is cuchito?
+
+Cuchito is a **test in the middle** tool that helps developers, QAs and devops, in their daily tasks with a complete set of helpful features:
+
+* **Manual stress test:** Connect cuchito between the front and the back, and make it multiply your API calls as many times as you need.
+* **Automated stress test:** Save manual stress sessions so they can run later as unatended automated stress tests.
+* **API schema validation:** Use [@hapi/joi](https://github.com/hapijs/joi) schema validations in the requests or responses to catch bugs
+* **API test:** write tests easier than ever, and run then manually or automatically.
+* **API mocking:** Replace or mutate request and responses, to try new features or edge cases for both the front and the back.
+* **re-routing:** Re-route the paths, so you can merge different servers, environment, versions and endpoints in one API.
+* **Real time config reload:** Change your session configuration on the fly.
 
 ## Quick guides
 
-### Basic manual Stress Test
+### First steps
 
 #### Initialize a cuchito project
 ```
@@ -26,32 +30,61 @@ npm init cuchito foo
 cd foo
 ```
 
-#### Edit the file called `cuchito.js` to:
+#### Edit the file named `cuchito.js` to:
 
 * set the field `host` to point to the API you want to stress.
 * set the IP and port you want your cuchito server to listen to.
-* select which methods do you want to multiply
-* config the request multiplication:
-  * `count` sets the amount of times each incoming request will be sent to the host
-  * `interval` sets the waiting miliseconds between those extra request
 
-#### Start cuchito
+#### Start a a manual session
 
 ```
 npm start
 ```
 
-#### Connect your front
+Manual sessions proxies the API.
 
-You need to setup your front to use the ip and port specified in `./cuchito.js`. You could also use ngrok.
+Eventhough the requests and responses can be multiplied, mutated, validated, tested, logged, and re-routed, cuchito works transparentely so any client should will as expected.
 
-You can use use the webapp/mobile-app for which the API has been developed. You can use ngrok to make it easy.
+You just need to connect the client to the ip and port that you has been set in `./cuchito.js`.
 
-You also can use any other testing tool like postman or curl to send some edge case requests of scenarios that are difficult to reach with the actual app. 
+#### Run a saved session
 
-#### Use your front as usual
+```
+npm test
+```
 
-You only need to use the front as usual, to have all the requests multiplied as times as you needed to.
+Replay a sessions to send the saved requests to the host, in mostly the same fashion (multiplying, mutating, validating, testing, loging, and/or rerouting).
+
+There are two differences:
+
+* Requests are not validated nor tested, only responses.
+* If any response validation or test fails, the reproduction stops with an error.
+
+### Basic manual Stress Test
+
+Edit the file `./cuchito.js`
+
+* config the request multiplication:
+  * add the methods don't you want to multiply to the `skipMethod` object, as truthy.
+  * `count` sets the amount of times each incoming request will be sent to the host
+  * `interval` sets the waiting milliseconds between those extra request
+
+```
+...
+  multiply: {
+    count: 50,
+    interval: 500,
+    skipMethods: {
+      'POST': 1,
+      'PUT': 1,
+      'DELETE': 1
+    },
+  },
+...
+```
+
+This example configures cuchito to resend any request 50 times, in intervals of 500 milliseconds, skipping those whose method are POST, PUT or DELETE.
+
 
 ### Basic automated stress tests
 
@@ -63,17 +96,52 @@ These recorded sessions can be replayed with the following command:
 npm test
 ```
 
-be aware that all recorded sessions would be reproduced simultaneously.
+new saved session does not replace or overwrite the current save session, but merge into it.
 
-### Basic front side API testing
+Please be aware that all recorded sessions would be reproduced simultaneously.
 
-When you are running a manual session, you can set test to validate the incoming requests.
 
-In the folder `./endpoints` create a `test.js` file that mimics the path and method of the endpoint you want to test. For instance `./endpoints/foo/bar/POST/test.js`
+### Basic forensics
 
-You can also set updinamic urls, wrapping the parameter name with brackets, like `./endpoints/foo/[fooId]/PUT/test.js`
+cuchito dumps log files with the whole request and response, for each not cloned requests.
 
-You can validate the schema of the request exporting a [@hapi/joi object](https://github.com/hapijs/joi#readme)
+This logs are stored in both modes, manual an automated.
+
+The file name is a csv row, with the next: timestamp, method, path, status, test result. For instance: `./logs/1592566705414,GET,⁄foo⁄bar?baz=qux,200,ok.yml`
+
+The file is a `yml` with the fields `request`, `response`, and optionally `originalRequest`, `originalResponse`, `error` and `logs`
+
+```
+request:
+  path: /foo/bar?baz=qux
+  params:
+    fooId: bar
+  query:
+    baz: qux
+  headers:
+    content-type: application/json
+  method: GET
+  body: {}
+response:
+  headers:
+    content-type: application/json; charset=utf-8
+  status: 200
+  body:
+    result: ok
+    code: 200
+```
+
+We will learn about the optional fields in the sections about mutations, advanced tests, and advanced logs.
+
+### Request schema validation
+
+When you are running a manual session (and only in manual sessions), you can validate the incoming requests.
+
+In the folder `./endpoints` create a `test.js` file in a path that mimics the endpoint's route and method you want to test. For instance `./endpoints/foo/bar/POST/test.js`
+
+You can also set up dinamic urls, wrapping the parameter name with brackets, like `./endpoints/foo/[fooId]/PUT/test.js`
+
+To validate the schema of the request this file needs to export a [@hapi/joi object](https://github.com/hapijs/joi#readme) as `requestSchema`
 
 ```
 const joi = require('@hapi/joi');
@@ -88,36 +156,35 @@ exports.requestSchema = joi.object({
 })
 ```
 
-If the body is json and the content type is application/json, `body` will be a javascript object. Otherwise it will be a string.
+If the request's body is json and the content type is application/json, `body` will be a javascript object. Otherwise it will be a string.
 
-The errors will show up red in the console, in the `./logs` and/or `./saved` folders as as `./logs|saved/{filename}.error.yml` if the logs and/or recorder are enabled. 
+`params` is an object with the route params. So if the file is `./endpoints/foo/[fooId]/PUT/test.js` and the request is `PUT /foo/bar` params will be `{ foodId: 'bar' }`
 
-> but wait, why would I ever want to do this? is not the incoming data validation something that should care to the backend?
+`query` is an object with the query params So if thethe request is `PUT /foo/bar?baz=qux` query will be `{ baz: 'qux' }`
 
-I can think of many scenarios where this feature could be usefull:
+No coercion is done, the values in `params` and `query` are always strings.
 
-1. You are a frontend developer using a third party API whose error messages are too litle informative, and you want to be sure you are using it right.
-2. You are a QA narrowing down the cases on which the app send some wrong request, so instead of messing around with the frontend code or the backend code, you just run cuchito with a couple of request validations.
+The validation errors will show up red in the console. The session will not stop, and the request is not skiped. It will reach the host.
 
+On top of that, the logs and recordings of the requests whose validation has failed will have the extension `.error.yml` instead of `.ok.yml`
 
-### Basic forensics
+### Response schema validation
 
-cuchito can write to the disk log files for all the requests you send to it and responses you receive from it.
+The response schema validation works much like the request schema validation.
 
-It does not write logs for the extra requests that it sends to stress the API.
+The differences are:
 
-Take a look at [config](#config) to learn how to configure the logs.
+* The `@hapi/joi` validations must be exported as `responseSchema`, and obviously the same `.../test.js` can export request validations and respons evalidations.
 
-### Basic API testing
+* The response schema validation runs on both modes, manual and automated.
 
-API testing set up is pretti similar to the front side API testing.
+* Automated sessions stop when any response schema validation fails.
 
-You just need to add `@hapi/joi` validations in each `./endpoints/foo/bar/[barId]/POST/test.js` you want to test.
 
 ```
 const joi = require('@hapi/joi');
 
-exports.requestSchema = joi.object({
+exports.responseSchema = joi.object({
   status: joi.valid(200),
   headers: ...,
   body: ...,
@@ -125,15 +192,23 @@ exports.requestSchema = joi.object({
 ```
 If the body is json and the content type is application/json, `body` will be a javascript object. Otherwise it will be a string.
 
-The first difference is that API testing runs also when the session is reproduced, unlike the front-end API testing that only runs in live sessions.
-
-The second difference is that the reproduction stops when any API test fails, whereas the front-end API testing never stops the session, no matter whether some request fails or not.
 
 ## advanced guides
 
 ### configuration
 
+The main config file is `./cuchito.js`
 
+This javascript is executed, in can includes any logic you need to create dinamic configurations.
+
+Just export a javascript object with all the configuration you need.
+
+* `host`: Host to reverse-proxy the request to
+* `ip`: Ip to listen to
+* `port`: port to listen to
+* `maxTimeSpan`: Send an error to the client when the request takes more than `maxTimeSpan` milliseconds. 0 or falsy to disable the feature and wait forever.
+
+If your configuration depends on some asynchronous source, or it could changes on run time you have to include a `oChange` function that accept a handler, that you can call with the actualized configuration as many times as you want.
 
 You can disable the logging by removing the field `logs` in the file `cuchito.js` or by renaming it to `logs_` for instance.
 
@@ -143,11 +218,11 @@ The fields of the `./endpoints/foo/[fooId]/GET/conf.js` overwrite the fields of 
 
 #### skip-all log-some strategy.
 
-You can disable all the logs in `./cuchito.js` and enable it for some endpoint in `./endpoints/some/endpoing/GET/conf.js`
+You can disable all the logs in `./cuchito.js` and enable it for some endpoint in `./endpoints/some/endpoint/GET/conf.js`
 
 #### log-all skip-some strategy
 
-You can disable all the logs in `./cuchito.js` and enable it for some endpoint in `./endpoints/some/endpoing/GET/conf.js`
+You can disable all the logs in `./cuchito.js` and enable it for some endpoint in `./endpoints/some/endpoint/GET/conf.js`
 
 
 ### Mutate requests

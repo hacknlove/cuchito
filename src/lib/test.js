@@ -1,10 +1,15 @@
+const chalk = require('chalk');
+
+const error = chalk.red;
+
 exports.beforeRequest = async function beforeRequest(req, res, next) {
   if (!req.conf.test || !req.conf.test.beforeRequest) {
     return next();
   }
 
-  await req.conf.test.beforeRequest({ request: req.request }).catch((error) => {
-    console.error(error);
+  await req.conf.test.beforeRequest({ request: req.request }).catch((err) => {
+    console.error(error('beforeRequest', req.request.path))
+    console.error(err);
     process.exit(1);
   });
 
@@ -21,9 +26,11 @@ exports.requestSchema = async function requestSchema(req, res, next) {
     params: req.request.params,
     query: req.request.query,
   });
+
   if (validation.error) {
+    console.error(error('requestSchema', req.request.path));
+    console.error(validation.error);
     if (req.conf.test.requestSchema.exitOnError) {
-      console.error(validation.error);
       process.exit(1);
     }
     req.request.error = validation.error;
@@ -34,8 +41,9 @@ exports.request = async function request(req, res, next) {
     return next();
   }
 
-  await req.conf.test.request({ request: req.request }).catch((error) => {
-    console.error(error);
+  await req.conf.test.request({ request: req.request }).catch((err) => {
+    console.error(error('request', req.request.path));
+    console.error(err);
     process.exit(1);
   });
   next();
@@ -45,8 +53,9 @@ exports.afterRequest = async function afterRequest(req, res, next) {
     return next();
   }
 
-  await req.conf.test.afterRequest({ request: req.request }).catch((error) => {
-    console.error(error);
+  await req.conf.test.afterRequest({ request: req.request }).catch((err) => {
+    console.error(error('afterRequest', req.request.path));
+    console.error(err);
     process.exit(1);
   });
   next();
@@ -57,19 +66,20 @@ exports.beforeResponse = async function beforeResponse(req, res, next) {
     return next();
   }
 
-  await req.conf.test.beforeResponse({ request: req.originalRequest || req.request, response: req.response }).catch((error) => {
-    console.error(error);
+  await req.conf.test.beforeResponse({
+    request: req.originalRequest || req.request,
+    response: req.response,
+  }).catch((err) => {
+    console.error(error('beforeRequest', req.request.path));
+    console.error(err);
     process.exit(1);
   });
   next();
 };
 exports.responseSchema = function responseSchema(req, res, next) {
-  console.log(req.conf.test);
-
   if (!req.conf.test || !req.conf.test.responseSchema) {
     return next();
   }
-  console.log('here');
 
   const validation = req.conf.test.responseSchema.validate({
     status: req.response.status,
@@ -77,6 +87,8 @@ exports.responseSchema = function responseSchema(req, res, next) {
     body: req.response.body,
   });
   if (validation.error) {
+    console.error(error('responseSchema', req.request.path));
+    console.error(validation.error);
     if (req.conf.test.responseSchema.exitOnError) {
       console.error(validation.error);
       process.exit(1);
@@ -88,8 +100,9 @@ exports.response = async function response(req, res, next) {
     return next();
   }
 
-  await req.conf.test.response({ request: req.originalRequest || req.request, response: req.response }).catch((error) => {
-    console.error(error);
+  await req.conf.test.response({ request: req.originalRequest || req.request, response: req.response }).catch((err) => {
+    console.error(error('response', req.request.path));
+    console.error(err);
     process.exit(1);
   });
   next();
@@ -99,8 +112,9 @@ exports.afterResponse = async function afterResponse(req, res, next) {
     return next();
   }
 
-  await req.conf.test.afterResponse({ request: req.originalRequest || req.request, response: req.response }).catch((error) => {
-    console.error(error);
+  await req.conf.test.afterResponse({ request: req.originalRequest || req.request, response: req.response }).catch((err) => {
+    console.error(error('afterResponse', req.request.path));
+    console.error(err);
     process.exit(1);
   });
   next();
