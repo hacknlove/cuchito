@@ -1,6 +1,6 @@
 {
   "name": "cuchito",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "proxy that multiplies the requests, record the sesion, and replays it",
   "main": "index.js",
   "scripts": {
