@@ -1,13 +1,6 @@
 const { conf } = require('./conf');
 
 module.exports = function match(req, res, next) {
-  const {
-    endpoints,
-    ip,
-    port,
-    ...globalConf
-  } = conf;
-
   if (!conf.endpoints.some((e) => {
     if (!e.match) {
       return false;
@@ -17,13 +10,14 @@ module.exports = function match(req, res, next) {
     }
 
     const matched = e.match(req.path);
+
     if (matched) {
-      req.conf = { ...globalConf, ...e.conf, mutate: e.mutate, test: e.test };
+      req.conf = { ...e.conf };
       req.params = matched.params;
       return true;
     }
   })) {
-    req.conf = { ...globalConf };
+    req.conf = {};
   }
 
   const { host, ...headers } = req.headers;

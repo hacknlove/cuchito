@@ -2,6 +2,8 @@ const timeoutSignal = require('timeout-signal');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
 
+const { conf } = require('./conf');
+
 const withoutBody = {
   GET: true,
   OPTIONS: true,
@@ -89,7 +91,7 @@ async function callEndpoint({
 }
 
 exports.proxy = async function proxy(req, res, next) {
-  if (!req.response) {
+  if (conf.remote && req.conf.proxy && !req.response) {
     req.response = await callEndpoint(req);
   }
   next();
